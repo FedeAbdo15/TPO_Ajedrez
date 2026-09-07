@@ -1,0 +1,253 @@
+---
+title: TPO Ajedrez - Diagrama de clases (paquete ajedrez.core)
+---
+classDiagram
+    direction TB
+
+    %% ================= DOMINIO =================
+    class Position {
+        <<record>>
+        +int row
+        +int column
+        +plus(Direction d) Position
+    }
+    class Direction {
+        <<record>>
+        +int rowDelta
+        +int columnDelta
+    }
+    class BoardSize {
+        <<record>>
+        +int rows
+        +int columns
+        +contains(Position p) boolean
+    }
+    class PieceColor {
+        <<enumeration>>
+        WHITE
+        BLACK
+        +opposite() PieceColor
+    }
+    class PieceType {
+        <<enumeration>>
+        PAWN
+        ROOK
+        KNIGHT
+        BISHOP
+        QUEEN
+        KING
+    }
+    class Piece {
+        -PieceType type
+        -PieceColor color
+        -MovementStrategy movement
+        +reachableSquares(Board board, Position from) List~Position~
+        +attackedSquares(Board board, Position from) List~Position~
+        +isOpponentOf(Piece other) boolean
+    }
+    class Board {
+        -Map squares
+        -BoardSize size
+        +pieceAt(Position p) Piece
+        +isEmpty(Position p) boolean
+        +placePiece(Piece piece, Position p) void
+        +removePiece(Position p) Piece
+        +movePiece(Position from, Position to) void
+        +positionsOf(PieceColor color) List~Position~
+        +kingPosition(PieceColor color) Position
+        +size() BoardSize
+        +copy() Board
+    }
+    class Move {
+        <<record>>
+        +Position from
+        +Position to
+    }
+
+    %% ================= MOVIMIENTO (Strategy) =================
+    class MovementStrategy {
+        <<interface>>
+        +reachableSquares(Board board, Position from, PieceColor color) List~Position~
+        +attackedSquares(Board board, Position from, PieceColor color) List~Position~
+    }
+    class SlidingMovement {
+        -List~Direction~ directions
+        -int maxSteps
+        +reachableSquares(Board board, Position from, PieceColor color) List~Position~
+    }
+    class JumpMovement {
+        -List~Direction~ offsets
+        +reachableSquares(Board board, Position from, PieceColor color) List~Position~
+    }
+    class PawnMovement {
+        -int startingRow
+        +reachableSquares(Board board, Position from, PieceColor color) List~Position~
+        +attackedSquares(Board board, Position from, PieceColor color) List~Position~
+    }
+    class CompositeMovement {
+        -List~MovementStrategy~ strategies
+        +reachableSquares(Board board, Position from, PieceColor color) List~Position~
+    }
+    class Directions {
+        <<utility>>
+        +ORTHOGONAL List~Direction~
+        +DIAGONAL List~Direction~
+        +KNIGHT_OFFSETS List~Direction~
+    }
+
+    %% ================= ARMADO DEL TABLERO =================
+    class PieceFactory {
+        <<interface>>
+        +create(PieceType type, PieceColor color) Piece
+    }
+    class StandardPieceFactory {
+        -Map strategiesByType
+        +create(PieceType type, PieceColor color) Piece
+    }
+    class BoardSetup {
+        <<interface>>
+        +createInitialBoard() Board
+    }
+    class StandardChessSetup {
+        -PieceFactory factory
+        +createInitialBoard() Board
+    }
+
+    %% ================= REGLAS =================
+    class MoveRule {
+        <<interface>>
+        +isSatisfiedBy(Board board, Move move, PieceColor turn) boolean
+        +reason() String
+    }
+    class SourceHasPieceRule {
+        +isSatisfiedBy(Board board, Move move, PieceColor turn) boolean
+    }
+    class TurnOwnershipRule {
+        +isSatisfiedBy(Board board, Move move, PieceColor turn) boolean
+    }
+    class PieceMovementRule {
+        +isSatisfiedBy(Board board, Move move, PieceColor turn) boolean
+    }
+    class NoFriendlyCaptureRule {
+        +isSatisfiedBy(Board board, Move move, PieceColor turn) boolean
+    }
+    class KingSafetyRule {
+        -CheckDetector detector
+        +isSatisfiedBy(Board board, Move move, PieceColor turn) boolean
+    }
+    class MoveValidator {
+        -List~MoveRule~ rules
+        +validate(Board board, Move move, PieceColor turn) ValidationResult
+    }
+    class ValidationResult {
+        <<record>>
+        +boolean valid
+        +String reason
+    }
+    class CheckDetector {
+        <<interface>>
+        +isInCheck(Board board, PieceColor color) boolean
+    }
+    class AttackBasedCheckDetector {
+        +isInCheck(Board board, PieceColor color) boolean
+    }
+
+    %% ================= PARTIDA =================
+    class Game {
+        -Board board
+        -MoveValidator validator
+        -CheckDetector detector
+        -MoveHistory history
+        -PieceColor turn
+        +move(Position from, Position to) MoveResult
+        +undo() void
+        +currentTurn() PieceColor
+        +status() GameStatus
+    }
+    class MoveResult {
+        <<record>>
+        +boolean applied
+        +String reason
+        +GameStatus status
+    }
+    class GameStatus {
+        <<enumeration>>
+        IN_PROGRESS
+        CHECK
+    }
+    class Command {
+        <<interface>>
+        +execute() void
+        +undo() void
+    }
+    class MoveCommand {
+        -Board board
+        -Move move
+        -Piece capturedPiece
+        -boolean executed
+        +execute() void
+        +undo() void
+    }
+    class MoveHistory {
+        -Deque~Command~ executed
+        +push(Command c) void
+        +undoLast() void
+        +isEmpty() boolean
+    }
+
+    %% ================= RELACIONES =================
+    Piece *-- MovementStrategy : TIENE-UNA estrategia
+    Piece --> PieceType
+    Piece --> PieceColor
+    Board o-- "0..*" Piece
+    Board *-- BoardSize
+    Board ..> Position
+    Move *-- "2" Position
+    Position ..> Direction
+
+    MovementStrategy <|.. SlidingMovement
+    MovementStrategy <|.. JumpMovement
+    MovementStrategy <|.. PawnMovement
+    MovementStrategy <|.. CompositeMovement
+    CompositeMovement o-- "2..*" MovementStrategy : la reina combina estrategias
+    SlidingMovement *-- "1..*" Direction
+    JumpMovement *-- "1..*" Direction
+    Directions ..> Direction
+
+    PieceFactory <|.. StandardPieceFactory
+    StandardPieceFactory ..> Piece : crea
+    StandardPieceFactory ..> MovementStrategy : inyecta
+    BoardSetup <|.. StandardChessSetup
+    StandardChessSetup --> PieceFactory
+    StandardChessSetup ..> Board : arma
+
+    MoveRule <|.. SourceHasPieceRule
+    MoveRule <|.. TurnOwnershipRule
+    MoveRule <|.. PieceMovementRule
+    MoveRule <|.. NoFriendlyCaptureRule
+    MoveRule <|.. KingSafetyRule
+    MoveValidator o-- "1..*" MoveRule : cadena abierta a extension
+    MoveValidator ..> ValidationResult
+    MoveRule ..> Board
+    MoveRule ..> Move
+    PieceMovementRule ..> Piece
+    KingSafetyRule --> CheckDetector
+    CheckDetector <|.. AttackBasedCheckDetector
+    AttackBasedCheckDetector ..> Board
+    AttackBasedCheckDetector ..> Piece
+
+    Game --> Board
+    Game --> MoveValidator
+    Game --> CheckDetector
+    Game --> MoveHistory
+    Game ..> MoveResult
+    Game ..> GameStatus
+    Game ..> MoveCommand : crea
+    Command <|.. MoveCommand
+    MoveCommand --> Board
+    MoveCommand --> Move
+    MoveHistory o-- "0..*" Command
+
+    note for MovementStrategy "Composicion sobre herencia: las piezas no heredan de una clase base con logica de movimiento, componen una estrategia. Agregar una pieza nueva es agregar una estrategia, sin tocar nada existente."
+    note for MoveValidator "Open/Closed: una regla nueva se agrega a la lista inyectada, sin modificar el validador ni las reglas existentes."
+    note for Piece "reachableSquares (a donde puede ir) y attackedSquares (que casillas ataca) se separan por el peon: avanza recto pero captura en diagonal."
