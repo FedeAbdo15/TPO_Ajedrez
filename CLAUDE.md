@@ -24,8 +24,8 @@ tpo-ajedrez/
 │   ├── ETAPAS.md
 │   └── DECISIONES.md
 └── src/
-    ├── main/java/ajedrez/core/     <- todas las clases
-    └── test/java/ajedrez/core/     <- todos los tests
+    ├── main/core/     <- todas las clases
+    └── test/core/     <- todos los tests
 ```
 
 No crear subpaquetes, ni carpetas por tipo de archivo (nada de `interfaces/`, `clases/`, `enums/`): una interfaz y sus implementaciones son una sola idea y viven juntas.

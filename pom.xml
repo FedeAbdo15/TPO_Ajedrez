@@ -25,6 +25,8 @@
     </dependencies>
 
     <build>
+        <sourceDirectory>src/main/core</sourceDirectory>
+        <testSourceDirectory>src/test/core</testSourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
