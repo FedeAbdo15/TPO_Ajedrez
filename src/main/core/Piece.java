@@ -1,15 +1,18 @@
 package ajedrez.core;
 
+import java.util.List;
 import java.util.Objects;
 
 public class Piece {
 
     private final PieceType type;
     private final PieceColor color;
+    private final MovementStrategy movement;
 
-    public Piece(PieceType type, PieceColor color) {
+    public Piece(PieceType type, PieceColor color, MovementStrategy movement) {
         this.type = type;
         this.color = color;
+        this.movement = movement;
     }
 
     public PieceType type() {
@@ -18,6 +21,14 @@ public class Piece {
 
     public PieceColor color() {
         return color;
+    }
+
+    public List<Position> reachableSquares(Board board, Position from) {
+        return movement.reachableSquares(board, from, color);
+    }
+
+    public List<Position> attackedSquares(Board board, Position from) {
+        return movement.attackedSquares(board, from, color);
     }
 
     @Override

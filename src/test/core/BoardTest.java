@@ -3,6 +3,8 @@ package ajedrez.core;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -12,11 +14,16 @@ class BoardTest {
 
     private final BoardSize size = new BoardSize(8, 8);
 
+    // El tablero no depende de cómo se mueven las piezas: alcanza con una estrategia vacía.
+    private static Piece piece(PieceType type, PieceColor color) {
+        return new Piece(type, color, (board, from, pieceColor) -> List.of());
+    }
+
     @Test
     @DisplayName("Poner una pieza la deja disponible en esa posición")
     void ponerUnaPiezaLaDejaDisponibleEnEsaPosicion() {
         Board board = new Board(size);
-        Piece rook = new Piece(PieceType.ROOK, PieceColor.WHITE);
+        Piece rook = piece(PieceType.ROOK, PieceColor.WHITE);
         Position position = new Position(0, 0);
 
         board.placePiece(rook, position);
@@ -28,7 +35,7 @@ class BoardTest {
     @DisplayName("Sacar una pieza la quita del tablero y la devuelve")
     void sacarUnaPiezaLaQuitaDelTableroYLaDevuelve() {
         Board board = new Board(size);
-        Piece rook = new Piece(PieceType.ROOK, PieceColor.WHITE);
+        Piece rook = piece(PieceType.ROOK, PieceColor.WHITE);
         Position position = new Position(0, 0);
         board.placePiece(rook, position);
 
@@ -52,7 +59,7 @@ class BoardTest {
     @DisplayName("Mover una pieza la traslada de origen a destino")
     void moverUnaPiezaLaTrasladaDeOrigenADestino() {
         Board board = new Board(size);
-        Piece knight = new Piece(PieceType.KNIGHT, PieceColor.BLACK);
+        Piece knight = piece(PieceType.KNIGHT, PieceColor.BLACK);
         Position from = new Position(1, 1);
         Position to = new Position(2, 3);
         board.placePiece(knight, from);
@@ -67,7 +74,7 @@ class BoardTest {
     @DisplayName("La copia del tablero es independiente del original")
     void laCopiaDelTableroEsIndependienteDelOriginal() {
         Board board = new Board(size);
-        Piece bishop = new Piece(PieceType.BISHOP, PieceColor.WHITE);
+        Piece bishop = piece(PieceType.BISHOP, PieceColor.WHITE);
         Position position = new Position(2, 2);
         board.placePiece(bishop, position);
 
