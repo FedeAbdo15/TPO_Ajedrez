@@ -80,13 +80,13 @@ classDiagram
         +reachableSquares(Board board, Position from, PieceColor color) List~Position~
     }
     class PawnMovement {
-        -int startingRow
         +reachableSquares(Board board, Position from, PieceColor color) List~Position~
         +attackedSquares(Board board, Position from, PieceColor color) List~Position~
     }
     class CompositeMovement {
         -List~MovementStrategy~ strategies
         +reachableSquares(Board board, Position from, PieceColor color) List~Position~
+        +attackedSquares(Board board, Position from, PieceColor color) List~Position~
     }
     class Directions {
         <<utility>>
