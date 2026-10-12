@@ -31,3 +31,19 @@
 **Por qué:** si `CompositeMovement` usara el default, una pieza compuesta que incluya un peón atacaría las casillas a las que avanza en vez de sus diagonales. Es la trampa 1 reapareciendo por la composición. Para eso está el test `unaComposicionConPeonAtacaConElAtaqueDelPeon`.
 
 **Cuándo la rompería:** si aparecieran varias piezas que atacan distinto de como se mueven, el default dejaría de ser el caso común. Ahí convendría hacer el método abstracto, para que cada estrategia nueva tenga que decidirlo de forma explícita.
+
+## `StandardPieceFactory` crea sus estrategias en el constructor en vez de recibirlas
+
+**Qué:** la fábrica arma internamente el mapa `PieceType → MovementStrategy` con una instancia por tipo, compartida por todas las piezas de ese tipo y de los dos colores.
+
+**Por qué:** la regla "toda dependencia entra por constructor" apunta a las colaboraciones de una clase de negocio; crear objetos es justamente la responsabilidad de una fábrica, y es el único lugar que sabe qué movimiento tiene cada pieza estándar. Si recibiera el mapa, ese conocimiento se mudaría a quien la construye, que hoy no existe. Compartir instancias es seguro porque las estrategias no tienen estado.
+
+**Cuándo la rompería:** si una variante necesitara mapear los mismos tipos a otras estrategias. Ahí el mapa entraría por constructor, o sería otra implementación de `PieceFactory`.
+
+## El 8x8 vive como constante en `StandardChessSetup`
+
+**Qué:** `StandardChessSetup` define `SIZE = new BoardSize(8, BACK_RANK.size())`. Las filas de peones y de piezas negras se derivan de ese tamaño, no se escriben como 6 y 7.
+
+**Por qué:** "ningún 8 hardcodeado en la lógica" se refiere a las clases que juegan (tablero, estrategias, reglas): esas siguen sin saber el tamaño. El ajedrez estándar sí es 8x8 por definición, y su fila de atrás tiene exactamente 8 piezas; recibir el tamaño por constructor permitiría armar tableros sin sentido. Cambiar el tamaño es escribir otra implementación de `BoardSetup`, sin tocar esta ni ninguna otra clase. Esa es la razón concreta para que `BoardSetup` sea una interfaz con una sola implementación hoy.
+
+**Cuándo la rompería:** si se pidiera el mismo armado estándar centrado en tableros de distinto tamaño. Ahí `BoardSize` entraría por constructor y la fila de atrás se ubicaría según el ancho recibido.
