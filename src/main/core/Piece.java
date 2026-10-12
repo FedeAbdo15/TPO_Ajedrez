@@ -31,6 +31,10 @@ public class Piece {
         return movement.attackedSquares(board, from, color);
     }
 
+    public boolean isOpponentOf(Piece other) {
+        return color != other.color;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
