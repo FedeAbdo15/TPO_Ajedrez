@@ -55,3 +55,11 @@
 **Por qué:** así cada regla responde una sola pregunta, sin repetir los chequeos de las otras. El movimiento fuera del tablero no necesita una regla propia (que el UML no tiene): un origen afuera no tiene pieza, así que lo rechaza `SourceHasPieceRule`, y un destino afuera no lo alcanza ninguna estrategia, así que lo rechaza `PieceMovementRule`. Ninguna de las dos lanza excepción, porque comprueban antes de leer el tablero.
 
 **Cuándo la rompería:** si las reglas tuvieran que poder armarse en cualquier orden (por ejemplo, si las eligiera el usuario). Ahí cada regla tendría que protegerse sola de los casos que hoy cubren las anteriores.
+
+## El núcleo se divide en `domain`, `movement`, `setup` y `rules`, y `MovementStrategy` vive en `domain`
+
+**Qué:** se volvió a la estructura estándar de Maven (`src/main/java/ajedrez/core/...`) y `ajedrez.core` se dividió en cuatro subpaquetes por concepto. La interfaz `MovementStrategy` quedó en `domain`; sus implementaciones, en `movement`.
+
+**Por qué:** con un solo paquete en `src/main/core`, la carpeta no coincidía con el paquete declarado y el IDE marcaba errores en todas las referencias, aunque Maven compilara. Con más de 20 clases (y las etapas 5 y 6 por venir), agrupar por concepto hace que el núcleo se lea por partes. `MovementStrategy` va en `domain` porque `Piece` la compone: si estuviera en `movement`, `domain` dependería de `movement` y `movement` de `domain`, un ciclo entre paquetes. Así `domain` no depende de nadie y todo lo demás apunta hacia él (inversión de dependencias).
+
+**Cuándo la rompería:** si un paquete quedara con una o dos clases, o si para usar una clase hubiera que importar de tres paquetes distintos a cada rato. Ahí la división dejaría de ayudar a leer y convendría juntar.

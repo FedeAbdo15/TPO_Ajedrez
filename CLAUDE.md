@@ -13,7 +13,7 @@ Lo desarrolla una sola persona, que después tiene que defender cada decisión d
 
 ## Estructura — mantenerla simple
 
-Todo el código vive en **un solo paquete: `ajedrez.core`**. Cada archivo arranca con `package ajedrez.core;`.
+Todo el núcleo vive bajo **`ajedrez.core`**, con la estructura estándar de Maven (la carpeta coincide con el paquete, así el IDE no marca errores). Adentro se divide en cuatro subpaquetes por concepto:
 
 ```
 tpo-ajedrez/
@@ -24,11 +24,17 @@ tpo-ajedrez/
 │   ├── ETAPAS.md
 │   └── DECISIONES.md
 └── src/
-    ├── main/core/     <- todas las clases
-    └── test/core/     <- todos los tests
+    ├── main/java/ajedrez/core/
+    │   ├── domain/     <- Position, Board, Piece, Move, MovementStrategy (interfaz)...
+    │   ├── movement/   <- implementaciones de MovementStrategy y Directions
+    │   ├── setup/      <- fábrica de piezas y armado del tablero
+    │   └── rules/      <- MoveRule, las reglas y MoveValidator
+    └── test/java/ajedrez/core/   <- mismos subpaquetes que main
 ```
 
-No crear subpaquetes, ni carpetas por tipo de archivo (nada de `interfaces/`, `clases/`, `enums/`): una interfaz y sus implementaciones son una sola idea y viven juntas.
+Las dependencias entre subpaquetes van en un solo sentido y sin ciclos: `domain` no importa a nadie; `movement` y `rules` importan solo `domain`; `setup` importa `domain` y `movement`. Las etapas siguientes suman paquetes con la misma lógica (por ejemplo, el jaque va en `rules` y la partida en `game`).
+
+No crear carpetas por tipo de archivo (nada de `interfaces/`, `clases/`, `enums/`): una interfaz y sus implementaciones son una sola idea y viven juntas. La excepción deliberada es `MovementStrategy`, que vive en `domain` porque `Piece` la compone (ver `DECISIONES.md`).
 
 Cuando más adelante aparezca la consola va a ir en `ajedrez.app`, y ahí sí van a ser dos paquetes: núcleo y adaptador. Esa es la única división que importa, y no se agrega ninguna otra sin que yo la pida.
 
