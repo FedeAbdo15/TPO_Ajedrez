@@ -47,3 +47,11 @@
 **Por qué:** "ningún 8 hardcodeado en la lógica" se refiere a las clases que juegan (tablero, estrategias, reglas): esas siguen sin saber el tamaño. El ajedrez estándar sí es 8x8 por definición, y su fila de atrás tiene exactamente 8 piezas; recibir el tamaño por constructor permitiría armar tableros sin sentido. Cambiar el tamaño es escribir otra implementación de `BoardSetup`, sin tocar esta ni ninguna otra clase. Esa es la razón concreta para que `BoardSetup` sea una interfaz con una sola implementación hoy.
 
 **Cuándo la rompería:** si se pidiera el mismo armado estándar centrado en tableros de distinto tamaño. Ahí `BoardSize` entraría por constructor y la fila de atrás se ubicaría según el ancho recibido.
+
+## `MoveValidator` corta en la primera regla que falla, y el orden de la lista importa
+
+**Qué:** el validador evalúa las reglas en el orden recibido y devuelve el motivo de la primera que no se cumple. Cada regla puede asumir que las anteriores pasaron: `TurnOwnershipRule` y `PieceMovementRule` dan por hecho que hay una pieza en el origen, y `NoFriendlyCaptureRule` da por hecho que el destino está dentro del tablero. El orden estándar es origen → turno → movimiento → captura propia.
+
+**Por qué:** así cada regla responde una sola pregunta, sin repetir los chequeos de las otras. El movimiento fuera del tablero no necesita una regla propia (que el UML no tiene): un origen afuera no tiene pieza, así que lo rechaza `SourceHasPieceRule`, y un destino afuera no lo alcanza ninguna estrategia, así que lo rechaza `PieceMovementRule`. Ninguna de las dos lanza excepción, porque comprueban antes de leer el tablero.
+
+**Cuándo la rompería:** si las reglas tuvieran que poder armarse en cualquier orden (por ejemplo, si las eligiera el usuario). Ahí cada regla tendría que protegerse sola de los casos que hoy cubren las anteriores.
