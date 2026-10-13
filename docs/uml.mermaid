@@ -29,13 +29,14 @@ classDiagram
         +opposite() PieceColor
     }
     class PieceType {
-        <<enumeration>>
-        PAWN
-        ROOK
-        KNIGHT
-        BISHOP
-        QUEEN
-        KING
+        <<record>>
+        +String name
+        +PieceType PAWN$
+        +PieceType ROOK$
+        +PieceType KNIGHT$
+        +PieceType BISHOP$
+        +PieceType QUEEN$
+        +PieceType KING$
     }
     class Piece {
         -PieceType type

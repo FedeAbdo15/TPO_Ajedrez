@@ -83,7 +83,7 @@ class MoveValidatorTest {
         MoveRule noKnightMoves = new MoveRule() {
             @Override
             public boolean isSatisfiedBy(Board board, Move move, PieceColor turn) {
-                return board.pieceAt(move.from()).type() != PieceType.KNIGHT;
+                return !board.pieceAt(move.from()).type().equals(PieceType.KNIGHT);
             }
 
             @Override

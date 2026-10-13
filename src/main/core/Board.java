@@ -54,7 +54,7 @@ public class Board {
 
     public Position kingPosition(PieceColor color) {
         return positionsOf(color).stream()
-                .filter(position -> squares.get(position).type() == PieceType.KING)
+                .filter(position -> squares.get(position).type().equals(PieceType.KING))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No hay rey " + color + " en el tablero"));
     }

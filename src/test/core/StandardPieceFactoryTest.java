@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class StandardPieceFactoryTest {
 
@@ -45,5 +46,13 @@ class StandardPieceFactoryTest {
 
         assertEquals(List.of(new Position(4, 3)), white);
         assertEquals(List.of(new Position(2, 3)), black);
+    }
+
+    @Test
+    @DisplayName("La fábrica estándar rechaza un tipo de pieza que no conoce")
+    void laFabricaEstandarRechazaUnTipoQueNoConoce() {
+        PieceType unknown = new PieceType("CHANCELLOR");
+
+        assertThrows(IllegalArgumentException.class, () -> factory.create(unknown, PieceColor.WHITE));
     }
 }

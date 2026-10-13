@@ -71,3 +71,11 @@
 **Por qué:** la regla "nada de `new` de una colaboración" apunta a los servicios con los que una clase trabaja (validador, detector, historial), y esos sí entran por constructor. Un `MoveCommand` no es un colaborador: es el registro de una jugada concreta, con su propia pieza capturada, y no puede existir antes de saber qué se mueve. El UML ya lo marca (`Game ..> MoveCommand : crea`). El estado calculado evita que `undo` tenga que restaurarlo: después de deshacer, el tablero manda.
 
 **Cuándo la rompería:** si hubiera que crear comandos distintos según la jugada (por ejemplo, enroque o promoción, que mueven o cambian más de una pieza). Ahí la creación pasaría a una fábrica de comandos inyectada en `Game`. Si calcular el estado se volviera caro (jaque mate exige recorrer todas las jugadas posibles), convendría guardarlo y actualizarlo junto con el historial.
+
+## `PieceType` es un record con constantes, no un enum
+
+**Qué:** `PieceType` pasó de `enum` a `record PieceType(String name)`, con las seis piezas estándar como constantes (`PieceType.ROOK`, etc.). Las comparaciones usan `equals`, y `StandardPieceFactory` usa `Map.of` en vez de `EnumMap`.
+
+**Por qué:** un enum es un conjunto cerrado: para sumar una pieza inventada había que agregarle un valor, o sea, modificar una clase existente. Eso contradecía la promesa "agregar una pieza = estrategia nueva + entrada en una fábrica, cero modificaciones", y la Etapa 7 lo dejó en evidencia. Con el record, una variante crea `new PieceType("CHANCELLOR")` desde afuera. El código que usaba las constantes no cambió. Lo que se pierde es lo que el núcleo no usaba: `values()`, `switch` exhaustivo y `EnumMap`.
+
+**Cuándo la rompería:** si el núcleo necesitara recorrer todos los tipos posibles (por ejemplo, para validar que una fábrica los cubra todos) o hacer un `switch` exhaustivo. Ahí convendría una interfaz `PieceType` implementada por un enum de piezas estándar y otro por cada variante.
