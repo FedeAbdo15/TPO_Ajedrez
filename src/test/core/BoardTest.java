@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -93,5 +94,38 @@ class BoardTest {
         Position outOfBounds = new Position(8, 0);
 
         assertThrows(IllegalArgumentException.class, () -> board.pieceAt(outOfBounds));
+    }
+
+    @Test
+    @DisplayName("Las posiciones de un color incluyen solo sus piezas")
+    void lasPosicionesDeUnColorIncluyenSoloSusPiezas() {
+        Board board = new Board(size);
+        board.placePiece(piece(PieceType.ROOK, PieceColor.WHITE), new Position(0, 0));
+        board.placePiece(piece(PieceType.KING, PieceColor.WHITE), new Position(0, 4));
+        board.placePiece(piece(PieceType.KING, PieceColor.BLACK), new Position(7, 4));
+
+        List<Position> white = board.positionsOf(PieceColor.WHITE);
+
+        assertEquals(Set.of(new Position(0, 0), new Position(0, 4)), Set.copyOf(white));
+    }
+
+    @Test
+    @DisplayName("El tablero encuentra la posición del rey de cada color")
+    void elTableroEncuentraLaPosicionDelReyDeCadaColor() {
+        Board board = new Board(size);
+        board.placePiece(piece(PieceType.KING, PieceColor.WHITE), new Position(0, 4));
+        board.placePiece(piece(PieceType.KING, PieceColor.BLACK), new Position(7, 4));
+
+        assertEquals(new Position(0, 4), board.kingPosition(PieceColor.WHITE));
+        assertEquals(new Position(7, 4), board.kingPosition(PieceColor.BLACK));
+    }
+
+    @Test
+    @DisplayName("Buscar el rey en un tablero que no lo tiene es un error")
+    void buscarElReyEnUnTableroQueNoLoTieneEsUnError() {
+        Board board = new Board(size);
+        board.placePiece(piece(PieceType.ROOK, PieceColor.WHITE), new Position(0, 0));
+
+        assertThrows(IllegalStateException.class, () -> board.kingPosition(PieceColor.WHITE));
     }
 }
