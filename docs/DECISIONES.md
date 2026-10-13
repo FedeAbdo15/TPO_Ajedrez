@@ -63,3 +63,11 @@
 **Por qué:** por tres razones. (1) Evita la recursión de la trampa 2: si el detector validara movimientos, llamaría a `KingSafetyRule`, que llamaría al detector, y así para siempre. (2) Es la regla real del ajedrez: una pieza clavada igual da jaque, aunque no pueda moverse legalmente. (3) "Atacar" es la pregunta correcta, y no "poder ir". Hoy, en la detección de jaque, las dos dan lo mismo incluso con el peón, porque `reachableSquares` incluye la diagonal ocupada y el rey siempre ocupa su casilla. Pero una pieza nueva que capture distinto de como se mueve (por ejemplo, una que capture saltando por encima de otra) rompería un detector basado en `reachableSquares`.
 
 **Cuándo la rompería:** si apareciera una regla que dependa de movimientos legales del rival (por ejemplo, jaque mate o ahogado). Ahí haría falta generar movimientos legales, y eso sí tendría que usar el validador, pero desde afuera del detector para no reintroducir la recursión.
+
+## `Game` crea un `MoveCommand` por jugada, y su estado se calcula en vez de guardarse
+
+**Qué:** `Game.move` hace `new MoveCommand(board, move)` en cada jugada aprobada, en vez de recibirlo por constructor. `status()` le pregunta al detector en cada llamada; no hay un campo de estado.
+
+**Por qué:** la regla "nada de `new` de una colaboración" apunta a los servicios con los que una clase trabaja (validador, detector, historial), y esos sí entran por constructor. Un `MoveCommand` no es un colaborador: es el registro de una jugada concreta, con su propia pieza capturada, y no puede existir antes de saber qué se mueve. El UML ya lo marca (`Game ..> MoveCommand : crea`). El estado calculado evita que `undo` tenga que restaurarlo: después de deshacer, el tablero manda.
+
+**Cuándo la rompería:** si hubiera que crear comandos distintos según la jugada (por ejemplo, enroque o promoción, que mueven o cambian más de una pieza). Ahí la creación pasaría a una fábrica de comandos inyectada en `Game`. Si calcular el estado se volviera caro (jaque mate exige recorrer todas las jugadas posibles), convendría guardarlo y actualizarlo junto con el historial.
