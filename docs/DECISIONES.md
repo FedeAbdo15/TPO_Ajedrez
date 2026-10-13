@@ -55,3 +55,11 @@
 **Por qué:** así cada regla responde una sola pregunta, sin repetir los chequeos de las otras. El movimiento fuera del tablero no necesita una regla propia (que el UML no tiene): un origen afuera no tiene pieza, así que lo rechaza `SourceHasPieceRule`, y un destino afuera no lo alcanza ninguna estrategia, así que lo rechaza `PieceMovementRule`. Ninguna de las dos lanza excepción, porque comprueban antes de leer el tablero.
 
 **Cuándo la rompería:** si las reglas tuvieran que poder armarse en cualquier orden (por ejemplo, si las eligiera el usuario). Ahí cada regla tendría que protegerse sola de los casos que hoy cubren las anteriores.
+
+## El detector de jaque usa `attackedSquares`, no movimientos legales
+
+**Qué:** `AttackBasedCheckDetector` recorre las piezas rivales y se fija si la casilla del rey está entre sus `attackedSquares`. No pasa por `MoveValidator` ni por ninguna regla. `KingSafetyRule` simula el movimiento sobre `board.copy()` y le pregunta al detector.
+
+**Por qué:** por tres razones. (1) Evita la recursión de la trampa 2: si el detector validara movimientos, llamaría a `KingSafetyRule`, que llamaría al detector, y así para siempre. (2) Es la regla real del ajedrez: una pieza clavada igual da jaque, aunque no pueda moverse legalmente. (3) "Atacar" es la pregunta correcta, y no "poder ir". Hoy, en la detección de jaque, las dos dan lo mismo incluso con el peón, porque `reachableSquares` incluye la diagonal ocupada y el rey siempre ocupa su casilla. Pero una pieza nueva que capture distinto de como se mueve (por ejemplo, una que capture saltando por encima de otra) rompería un detector basado en `reachableSquares`.
+
+**Cuándo la rompería:** si apareciera una regla que dependa de movimientos legales del rival (por ejemplo, jaque mate o ahogado). Ahí haría falta generar movimientos legales, y eso sí tendría que usar el validador, pero desde afuera del detector para no reintroducir la recursión.
