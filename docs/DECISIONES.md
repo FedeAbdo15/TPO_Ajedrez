@@ -79,3 +79,11 @@
 **Por qué:** un enum es un conjunto cerrado: para sumar una pieza inventada había que agregarle un valor, o sea, modificar una clase existente. Eso contradecía la promesa "agregar una pieza = estrategia nueva + entrada en una fábrica, cero modificaciones", y la Etapa 7 lo dejó en evidencia. Con el record, una variante crea `new PieceType("CHANCELLOR")` desde afuera. El código que usaba las constantes no cambió. Lo que se pierde es lo que el núcleo no usaba: `values()`, `switch` exhaustivo y `EnumMap`.
 
 **Cuándo la rompería:** si el núcleo necesitara recorrer todos los tipos posibles (por ejemplo, para validar que una fábrica los cubra todos) o hacer un `switch` exhaustivo. Ahí convendría una interfaz `PieceType` implementada por un enum de piezas estándar y otro por cada variante.
+
+## Una pieza nueva entra por una fábrica de la variante, no por `StandardPieceFactory`
+
+**Qué:** el canciller (caballo + torre) y el arzobispo (caballo + alfil) de la Etapa 7 se arman con un `PieceType` nuevo, un `CompositeMovement` de estrategias existentes y una `PieceFactory` de la variante, que conoce las piezas nuevas y delega el resto en `StandardPieceFactory`. El tablero Capablanca (8x10) es un `BoardSetup` propio. Las dos interfaces tienen un solo método, así que alcanza con una lambda.
+
+**Por qué:** "una entrada en la fábrica" no puede significar editar `StandardPieceFactory`, porque eso sería modificar una clase existente. La fábrica de la variante es un decorador: suma lo nuevo y reutiliza lo estándar. Validador, detector de jaque, `Game` y undo funcionan con las piezas nuevas sin saber que existen, porque solo hablan con `MovementStrategy`. `PieceByCompositionTest` es la evidencia: agrega dos piezas y un tamaño de tablero sin una sola línea nueva en el núcleo.
+
+**Cuándo la rompería:** si las variantes se volvieran parte del producto (elegirlas desde la consola, por ejemplo). Ahí la fábrica y el armado de cada variante pasarían de los tests a clases de producción, en el lugar donde se arma la partida.
