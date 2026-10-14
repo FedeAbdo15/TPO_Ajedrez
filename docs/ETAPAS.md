@@ -1,7 +1,7 @@
 # Etapas de implementación — núcleo del TPO
 
 Una etapa por vez. Cada una termina con `mvn test` en verde y un commit.
-Todas las clases van en `src/main/java/ajedrez/core/`, todos los tests en `src/test/java/ajedrez/core/`, repartidos en los subpaquetes `domain`, `movement`, `setup` y `rules` (ver `CLAUDE.md`).
+Todas las clases van en `src/main/java/ajedrez/core/`, todos los tests en `src/test/java/ajedrez/core/`, repartidos en los subpaquetes `domain`, `movement`, `setup`, `rules` y `game` (ver `CLAUDE.md`).
 
 ## Etapa 0 — Scaffolding
 

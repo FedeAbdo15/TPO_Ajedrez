@@ -11,7 +11,6 @@ import ajedrez.core.movement.JumpMovement;
 import ajedrez.core.movement.PawnMovement;
 import ajedrez.core.movement.SlidingMovement;
 
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -28,13 +27,13 @@ public class StandardPieceFactory implements PieceFactory {
         List<Direction> allDirections = Stream.concat(
                 Directions.ORTHOGONAL.stream(), Directions.DIAGONAL.stream()).toList();
 
-        strategiesByType = new EnumMap<>(PieceType.class);
-        strategiesByType.put(PieceType.PAWN, new PawnMovement());
-        strategiesByType.put(PieceType.ROOK, rook);
-        strategiesByType.put(PieceType.KNIGHT, new JumpMovement(Directions.KNIGHT_OFFSETS));
-        strategiesByType.put(PieceType.BISHOP, bishop);
-        strategiesByType.put(PieceType.QUEEN, new CompositeMovement(List.of(rook, bishop)));
-        strategiesByType.put(PieceType.KING, new SlidingMovement(allDirections, 1));
+        strategiesByType = Map.of(
+                PieceType.PAWN, new PawnMovement(),
+                PieceType.ROOK, rook,
+                PieceType.KNIGHT, new JumpMovement(Directions.KNIGHT_OFFSETS),
+                PieceType.BISHOP, bishop,
+                PieceType.QUEEN, new CompositeMovement(List.of(rook, bishop)),
+                PieceType.KING, new SlidingMovement(allDirections, 1));
     }
 
     @Override

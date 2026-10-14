@@ -13,7 +13,7 @@ Lo desarrolla una sola persona, que después tiene que defender cada decisión d
 
 ## Estructura — mantenerla simple
 
-Todo el núcleo vive bajo **`ajedrez.core`**, con la estructura estándar de Maven (la carpeta coincide con el paquete, así el IDE no marca errores). Adentro se divide en cuatro subpaquetes por concepto:
+Todo el núcleo vive bajo **`ajedrez.core`**, con la estructura estándar de Maven (la carpeta coincide con el paquete, así el IDE no marca errores). Adentro se divide en cinco subpaquetes por concepto:
 
 ```
 tpo-ajedrez/
@@ -28,11 +28,12 @@ tpo-ajedrez/
     │   ├── domain/     <- Position, Board, Piece, Move, MovementStrategy (interfaz)...
     │   ├── movement/   <- implementaciones de MovementStrategy y Directions
     │   ├── setup/      <- fábrica de piezas y armado del tablero
-    │   └── rules/      <- MoveRule, las reglas y MoveValidator
-    └── test/java/ajedrez/core/   <- mismos subpaquetes que main
+    │   ├── rules/      <- MoveRule, las reglas, MoveValidator y el jaque (CheckDetector, KingSafetyRule)
+    │   └── game/       <- Game, Command/MoveCommand, MoveHistory, MoveResult, GameStatus
+    └── test/java/ajedrez/core/   <- mismos subpaquetes que main, más PieceByCompositionTest en la raíz
 ```
 
-Las dependencias entre subpaquetes van en un solo sentido y sin ciclos: `domain` no importa a nadie; `movement` y `rules` importan solo `domain`; `setup` importa `domain` y `movement`. Las etapas siguientes suman paquetes con la misma lógica (por ejemplo, el jaque va en `rules` y la partida en `game`).
+Las dependencias entre subpaquetes van en un solo sentido y sin ciclos: `domain` no importa a nadie; `movement` y `rules` importan solo `domain`; `setup` importa `domain` y `movement`; `game` importa `domain` y `rules`.
 
 No crear carpetas por tipo de archivo (nada de `interfaces/`, `clases/`, `enums/`): una interfaz y sus implementaciones son una sola idea y viven juntas. La excepción deliberada es `MovementStrategy`, que vive en `domain` porque `Piece` la compone (ver `DECISIONES.md`).
 

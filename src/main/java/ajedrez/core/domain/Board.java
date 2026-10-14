@@ -1,6 +1,7 @@
 package ajedrez.core.domain;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -42,6 +43,20 @@ public class Board {
             throw new IllegalStateException("No hay pieza en la posición de origen: " + from);
         }
         squares.put(to, piece);
+    }
+
+    public List<Position> positionsOf(PieceColor color) {
+        return squares.entrySet().stream()
+                .filter(entry -> entry.getValue().color() == color)
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    public Position kingPosition(PieceColor color) {
+        return positionsOf(color).stream()
+                .filter(position -> squares.get(position).type().equals(PieceType.KING))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No hay rey " + color + " en el tablero"));
     }
 
     public BoardSize size() {

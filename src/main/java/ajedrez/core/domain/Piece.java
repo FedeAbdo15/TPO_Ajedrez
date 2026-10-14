@@ -39,7 +39,7 @@ public class Piece {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Piece other)) return false;
-        return type == other.type && color == other.color;
+        return type.equals(other.type) && color == other.color;
     }
 
     @Override

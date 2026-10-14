@@ -56,10 +56,42 @@
 
 **Cuándo la rompería:** si las reglas tuvieran que poder armarse en cualquier orden (por ejemplo, si las eligiera el usuario). Ahí cada regla tendría que protegerse sola de los casos que hoy cubren las anteriores.
 
-## El núcleo se divide en `domain`, `movement`, `setup` y `rules`, y `MovementStrategy` vive en `domain`
+## El núcleo se divide en `domain`, `movement`, `setup`, `rules` y `game`, y `MovementStrategy` vive en `domain`
 
-**Qué:** se volvió a la estructura estándar de Maven (`src/main/java/ajedrez/core/...`) y `ajedrez.core` se dividió en cuatro subpaquetes por concepto. La interfaz `MovementStrategy` quedó en `domain`; sus implementaciones, en `movement`.
+**Qué:** se volvió a la estructura estándar de Maven (`src/main/java/ajedrez/core/...`) y `ajedrez.core` se dividió en subpaquetes por concepto: `domain`, `movement`, `setup`, `rules` (incluye el jaque: `CheckDetector` y `KingSafetyRule`) y `game` (partida, comandos e historial). La interfaz `MovementStrategy` quedó en `domain`; sus implementaciones, en `movement`. Las dependencias van en un solo sentido: `game` → `rules` → `domain`, `setup` → `movement` → `domain`.
 
-**Por qué:** con un solo paquete en `src/main/core`, la carpeta no coincidía con el paquete declarado y el IDE marcaba errores en todas las referencias, aunque Maven compilara. Con más de 20 clases (y las etapas 5 y 6 por venir), agrupar por concepto hace que el núcleo se lea por partes. `MovementStrategy` va en `domain` porque `Piece` la compone: si estuviera en `movement`, `domain` dependería de `movement` y `movement` de `domain`, un ciclo entre paquetes. Así `domain` no depende de nadie y todo lo demás apunta hacia él (inversión de dependencias).
+**Por qué:** con un solo paquete en `src/main/core`, la carpeta no coincidía con el paquete declarado y el IDE marcaba errores en todas las referencias, aunque Maven compilara. Con más de 30 clases, agrupar por concepto hace que el núcleo se lea por partes. `MovementStrategy` va en `domain` porque `Piece` la compone: si estuviera en `movement`, `domain` dependería de `movement` y `movement` de `domain`, un ciclo entre paquetes. Así `domain` no depende de nadie y todo lo demás apunta hacia él (inversión de dependencias).
 
 **Cuándo la rompería:** si un paquete quedara con una o dos clases, o si para usar una clase hubiera que importar de tres paquetes distintos a cada rato. Ahí la división dejaría de ayudar a leer y convendría juntar.
+
+## El detector de jaque usa `attackedSquares`, no movimientos legales
+
+**Qué:** `AttackBasedCheckDetector` recorre las piezas rivales y se fija si la casilla del rey está entre sus `attackedSquares`. No pasa por `MoveValidator` ni por ninguna regla. `KingSafetyRule` simula el movimiento sobre `board.copy()` y le pregunta al detector.
+
+**Por qué:** por tres razones. (1) Evita la recursión de la trampa 2: si el detector validara movimientos, llamaría a `KingSafetyRule`, que llamaría al detector, y así para siempre. (2) Es la regla real del ajedrez: una pieza clavada igual da jaque, aunque no pueda moverse legalmente. (3) "Atacar" es la pregunta correcta, y no "poder ir". Hoy, en la detección de jaque, las dos dan lo mismo incluso con el peón, porque `reachableSquares` incluye la diagonal ocupada y el rey siempre ocupa su casilla. Pero una pieza nueva que capture distinto de como se mueve (por ejemplo, una que capture saltando por encima de otra) rompería un detector basado en `reachableSquares`.
+
+**Cuándo la rompería:** si apareciera una regla que dependa de movimientos legales del rival (por ejemplo, jaque mate o ahogado). Ahí haría falta generar movimientos legales, y eso sí tendría que usar el validador, pero desde afuera del detector para no reintroducir la recursión.
+
+## `Game` crea un `MoveCommand` por jugada, y su estado se calcula en vez de guardarse
+
+**Qué:** `Game.move` hace `new MoveCommand(board, move)` en cada jugada aprobada, en vez de recibirlo por constructor. `status()` le pregunta al detector en cada llamada; no hay un campo de estado.
+
+**Por qué:** la regla "nada de `new` de una colaboración" apunta a los servicios con los que una clase trabaja (validador, detector, historial), y esos sí entran por constructor. Un `MoveCommand` no es un colaborador: es el registro de una jugada concreta, con su propia pieza capturada, y no puede existir antes de saber qué se mueve. El UML ya lo marca (`Game ..> MoveCommand : crea`). El estado calculado evita que `undo` tenga que restaurarlo: después de deshacer, el tablero manda.
+
+**Cuándo la rompería:** si hubiera que crear comandos distintos según la jugada (por ejemplo, enroque o promoción, que mueven o cambian más de una pieza). Ahí la creación pasaría a una fábrica de comandos inyectada en `Game`. Si calcular el estado se volviera caro (jaque mate exige recorrer todas las jugadas posibles), convendría guardarlo y actualizarlo junto con el historial.
+
+## `PieceType` es un record con constantes, no un enum
+
+**Qué:** `PieceType` pasó de `enum` a `record PieceType(String name)`, con las seis piezas estándar como constantes (`PieceType.ROOK`, etc.). Las comparaciones usan `equals`, y `StandardPieceFactory` usa `Map.of` en vez de `EnumMap`.
+
+**Por qué:** un enum es un conjunto cerrado: para sumar una pieza inventada había que agregarle un valor, o sea, modificar una clase existente. Eso contradecía la promesa "agregar una pieza = estrategia nueva + entrada en una fábrica, cero modificaciones", y la Etapa 7 lo dejó en evidencia. Con el record, una variante crea `new PieceType("CHANCELLOR")` desde afuera. El código que usaba las constantes no cambió. Lo que se pierde es lo que el núcleo no usaba: `values()`, `switch` exhaustivo y `EnumMap`.
+
+**Cuándo la rompería:** si el núcleo necesitara recorrer todos los tipos posibles (por ejemplo, para validar que una fábrica los cubra todos) o hacer un `switch` exhaustivo. Ahí convendría una interfaz `PieceType` implementada por un enum de piezas estándar y otro por cada variante.
+
+## Una pieza nueva entra por una fábrica de la variante, no por `StandardPieceFactory`
+
+**Qué:** el canciller (caballo + torre) y el arzobispo (caballo + alfil) de la Etapa 7 se arman con un `PieceType` nuevo, un `CompositeMovement` de estrategias existentes y una `PieceFactory` de la variante, que conoce las piezas nuevas y delega el resto en `StandardPieceFactory`. El tablero Capablanca (8x10) es un `BoardSetup` propio. Las dos interfaces tienen un solo método, así que alcanza con una lambda.
+
+**Por qué:** "una entrada en la fábrica" no puede significar editar `StandardPieceFactory`, porque eso sería modificar una clase existente. La fábrica de la variante es un decorador: suma lo nuevo y reutiliza lo estándar. Validador, detector de jaque, `Game` y undo funcionan con las piezas nuevas sin saber que existen, porque solo hablan con `MovementStrategy`. `PieceByCompositionTest` es la evidencia: agrega dos piezas y un tamaño de tablero sin una sola línea nueva en el núcleo.
+
+**Cuándo la rompería:** si las variantes se volvieran parte del producto (elegirlas desde la consola, por ejemplo). Ahí la fábrica y el armado de cada variante pasarían de los tests a clases de producción, en el lugar donde se arma la partida.
