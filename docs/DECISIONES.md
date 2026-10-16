@@ -95,3 +95,11 @@
 **Por qué:** "una entrada en la fábrica" no puede significar editar `StandardPieceFactory`, porque eso sería modificar una clase existente. La fábrica de la variante es un decorador: suma lo nuevo y reutiliza lo estándar. Validador, detector de jaque, `Game` y undo funcionan con las piezas nuevas sin saber que existen, porque solo hablan con `MovementStrategy`. `PieceByCompositionTest` es la evidencia: agrega dos piezas y un tamaño de tablero sin una sola línea nueva en el núcleo.
 
 **Cuándo la rompería:** si las variantes se volvieran parte del producto (elegirlas desde la consola, por ejemplo). Ahí la fábrica y el armado de cada variante pasarían de los tests a clases de producción, en el lugar donde se arma la partida.
+
+## `LegalMoveChecker` detecta jaque mate y ahogado sin recursión
+
+**Qué:** `LegalMoveChecker` es un colaborador de `Game` que recorre todas las piezas del jugador activo y pregunta si alguna tiene al menos un destino que pase el `MoveValidator` completo (incluyendo `KingSafetyRule`). `Game.status()` lo combina con `CheckDetector`: sin movimientos y en jaque → `CHECKMATE`; sin movimientos y sin jaque → `STALEMATE`.
+
+**Por qué:** jaque mate y ahogado requieren saber si quedan movimientos legales, y eso sí tiene que pasar por el validador (a diferencia del jaque, que usa `attackedSquares` para evitar recursión). `LegalMoveChecker` llama al validador desde afuera de la cadena `KingSafetyRule → CheckDetector`, así no hay ciclo. Se separó en su propia clase para mantener `Game` enfocado en la coordinación de la partida, y porque la misma lógica puede ser útil para la UI (resaltar que no hay movimientos disponibles) sin exponer los internos de `Game`.
+
+**Cuándo la rompería:** si calcular todos los movimientos legales se volviera muy costoso (tableros grandes o muchas piezas). Ahí convendría cachear el resultado junto con el historial, o usar una detección incremental. También si `Game` necesitara exponer la lista de movimientos legales directamente; en ese caso `LegalMoveChecker` podría devolver la lista en vez de un booleano.

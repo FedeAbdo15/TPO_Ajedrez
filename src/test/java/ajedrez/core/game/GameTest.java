@@ -35,7 +35,7 @@ class GameTest {
             new NoFriendlyCaptureRule(), new KingSafetyRule(detector)));
 
     private Game gameOn(Board board) {
-        return new Game(board, validator, detector, new MoveHistory());
+        return new Game(board, validator, detector, new ajedrez.core.rules.LegalMoveChecker(), new MoveHistory());
     }
 
     private static Position at(int row, int column) {

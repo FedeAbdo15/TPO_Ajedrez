@@ -87,7 +87,7 @@ class PieceByCompositionTest {
         MoveValidator validator = new MoveValidator(List.of(
                 new SourceHasPieceRule(), new TurnOwnershipRule(), new PieceMovementRule(),
                 new NoFriendlyCaptureRule(), new KingSafetyRule(detector)));
-        return new Game(board, validator, detector, new MoveHistory());
+        return new Game(board, validator, detector, new ajedrez.core.rules.LegalMoveChecker(), new MoveHistory());
     }
 
     private static Position at(int row, int column) {
