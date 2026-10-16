@@ -28,7 +28,7 @@ public class BoardPanel extends JPanel {
     private final PieceImageLoader imageLoader;
 
     private boolean flipped = false;
-    private boolean autoFlip = true;
+    private boolean autoFlip = false;
 
     private Position selectedFrom = null;
     private List<Position> legalTargets = List.of();

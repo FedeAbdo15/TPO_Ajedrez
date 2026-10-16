@@ -19,7 +19,7 @@ public class SidePanel extends JPanel {
     private final JLabel statusLabel = new JLabel();
     private final JList<String> historyList = new JList<>();
     private final JButton undoButton = new JButton("Deshacer");
-    private final JCheckBox flipCheck = new JCheckBox("Voltear tablero tras cada jugada", true);
+    private final JCheckBox flipCheck = new JCheckBox("Voltear tablero tras cada jugada", false);
 
     public SidePanel(Game game, BoardPanel boardPanel, DefaultListModel<String> historyModel) {
         this.game = game;
