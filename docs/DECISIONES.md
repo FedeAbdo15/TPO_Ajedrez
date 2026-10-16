@@ -97,9 +97,16 @@
 **Cuándo la rompería:** si las variantes se volvieran parte del producto (elegirlas desde la consola, por ejemplo). Ahí la fábrica y el armado de cada variante pasarían de los tests a clases de producción, en el lugar donde se arma la partida.
 
 ## `LegalMoveChecker` detecta jaque mate y ahogado sin recursión
-
 **Qué:** `LegalMoveChecker` es un colaborador de `Game` que recorre todas las piezas del jugador activo y pregunta si alguna tiene al menos un destino que pase el `MoveValidator` completo (incluyendo `KingSafetyRule`). `Game.status()` lo combina con `CheckDetector`: sin movimientos y en jaque → `CHECKMATE`; sin movimientos y sin jaque → `STALEMATE`.
 
 **Por qué:** jaque mate y ahogado requieren saber si quedan movimientos legales, y eso sí tiene que pasar por el validador (a diferencia del jaque, que usa `attackedSquares` para evitar recursión). `LegalMoveChecker` llama al validador desde afuera de la cadena `KingSafetyRule → CheckDetector`, así no hay ciclo. Se separó en su propia clase para mantener `Game` enfocado en la coordinación de la partida, y porque la misma lógica puede ser útil para la UI (resaltar que no hay movimientos disponibles) sin exponer los internos de `Game`.
 
 **Cuándo la rompería:** si calcular todos los movimientos legales se volviera muy costoso (tableros grandes o muchas piezas). Ahí convendría cachear el resultado junto con el historial, o usar una detección incremental. También si `Game` necesitara exponer la lista de movimientos legales directamente; en ese caso `LegalMoveChecker` podría devolver la lista en vez de un booleano.
+
+## La UI vive en `ajedrez.app.swing`, fuera del núcleo, y usa piezas PNG del set cburnett
+
+**Qué:** `ajedrez.app.swing` aloja `ChessApp`, `ChessFrame`, `BoardPanel`, `SidePanel`, `PieceImageLoader` y `DragState`. Es un adaptador puro sobre `Game`/`Board`/`MoveValidator`; `ajedrez.core` no se toca. Las piezas son PNG (80×80) del set cburnett de Lichess, rasterizados de sus SVG y guardados en `src/main/resources/pieces/{w/b}{P/N/B/R/Q/K}.png`. `BoardPanel` pinta `board.size()` filas × columnas, destaca `reachableSquares`, arrastra con ghost, llama a `game.move()` al soltar y rota el tablero 180° tras cada jugada aplicada (y lo rota al deshacer) cuando la casilla "Voltear tablero tras cada jugada" está activa.
+
+**Por qué:** `CLAUDE.md` destina `ajedrez.app` al adaptador de consola/UI y exige que el núcleo no se modifique. cburnett solo provee SVG, y `ImageIO` lee PNG nativamente sin dependencias de terceros, así que se rasterizan los SVG a PNG con ImageMagick y se empaquetan como recursos. El 180° (filas y columnas) es el giro correcto para dos jugadores en un mismo equipo: la parte que tira ve sus piezas abajo. La casilla permite desactivar el volteo automático mientras se evalúa si conviene.
+
+**Cuándo la rompería:** si se pide una consola de texto en vez de Swing, o si el set de piezas cambia (íconos Unicode, imágenes distintas, o SVG con un rasterizador). Entonces `PieceImageLoader` y el `BoardPanel` se adaptan sin tocar el núcleo.
