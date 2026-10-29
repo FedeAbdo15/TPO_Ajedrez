@@ -1,0 +1,47 @@
+package ajedrez.core.setup;
+
+import ajedrez.core.domain.Direction;
+import ajedrez.core.domain.MovementStrategy;
+import ajedrez.core.domain.Piece;
+import ajedrez.core.domain.PieceColor;
+import ajedrez.core.domain.PieceType;
+import ajedrez.core.movement.CompositeMovement;
+import ajedrez.core.movement.Directions;
+import ajedrez.core.movement.JumpMovement;
+import ajedrez.core.movement.PawnMovement;
+import ajedrez.core.movement.SlidingMovement;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+public class StandardPieceFactory implements PieceFactory {
+
+    private final Map<PieceType, MovementStrategy> strategiesByType;
+
+    // Las estrategias no tienen estado: una sola instancia por tipo sirve para todas las piezas
+    // de ese tipo, de los dos colores.
+    public StandardPieceFactory() {
+        MovementStrategy rook = new SlidingMovement(Directions.ORTHOGONAL);
+        MovementStrategy bishop = new SlidingMovement(Directions.DIAGONAL);
+        List<Direction> allDirections = Stream.concat(
+                Directions.ORTHOGONAL.stream(), Directions.DIAGONAL.stream()).toList();
+
+        strategiesByType = Map.of(
+                PieceType.PAWN, new PawnMovement(),
+                PieceType.ROOK, rook,
+                PieceType.KNIGHT, new JumpMovement(Directions.KNIGHT_OFFSETS),
+                PieceType.BISHOP, bishop,
+                PieceType.QUEEN, new CompositeMovement(List.of(rook, bishop)),
+                PieceType.KING, new SlidingMovement(allDirections, 1));
+    }
+
+    @Override
+    public Piece create(PieceType type, PieceColor color) {
+        MovementStrategy movement = strategiesByType.get(type);
+        if (movement == null) {
+            throw new IllegalArgumentException("No hay estrategia de movimiento para " + type);
+        }
+        return new Piece(type, color, movement);
+    }
+}

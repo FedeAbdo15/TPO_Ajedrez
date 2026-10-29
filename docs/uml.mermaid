@@ -1,10 +1,11 @@
 ---
-title: TPO Ajedrez - Diagrama de clases (paquete ajedrez.core)
+title: TPO Ajedrez - Diagrama de clases (nucleo ajedrez.core)
 ---
 classDiagram
     direction TB
 
-    %% ================= DOMINIO =================
+    %% ================= DOMINIO (ajedrez.core.domain) =================
+    namespace domain {
     class Position {
         <<record>>
         +int row
@@ -29,13 +30,14 @@ classDiagram
         +opposite() PieceColor
     }
     class PieceType {
-        <<enumeration>>
-        PAWN
-        ROOK
-        KNIGHT
-        BISHOP
-        QUEEN
-        KING
+        <<record>>
+        +String name
+        +PieceType PAWN$
+        +PieceType ROOK$
+        +PieceType KNIGHT$
+        +PieceType BISHOP$
+        +PieceType QUEEN$
+        +PieceType KING$
     }
     class Piece {
         -PieceType type
@@ -63,13 +65,15 @@ classDiagram
         +Position from
         +Position to
     }
-
-    %% ================= MOVIMIENTO (Strategy) =================
     class MovementStrategy {
         <<interface>>
         +reachableSquares(Board board, Position from, PieceColor color) List~Position~
         +attackedSquares(Board board, Position from, PieceColor color) List~Position~
     }
+    }
+
+    %% ================= MOVIMIENTO - Strategy (ajedrez.core.movement) =================
+    namespace movement {
     class SlidingMovement {
         -List~Direction~ directions
         -int maxSteps
@@ -94,8 +98,10 @@ classDiagram
         +DIAGONAL List~Direction~
         +KNIGHT_OFFSETS List~Direction~
     }
+    }
 
-    %% ================= ARMADO DEL TABLERO =================
+    %% ================= ARMADO DEL TABLERO (ajedrez.core.setup) =================
+    namespace setup {
     class PieceFactory {
         <<interface>>
         +create(PieceType type, PieceColor color) Piece
@@ -112,8 +118,10 @@ classDiagram
         -PieceFactory factory
         +createInitialBoard() Board
     }
+    }
 
-    %% ================= REGLAS =================
+    %% ================= REGLAS (ajedrez.core.rules) =================
+    namespace rules {
     class MoveRule {
         <<interface>>
         +isSatisfiedBy(Board board, Move move, PieceColor turn) boolean
@@ -151,12 +159,18 @@ classDiagram
     class AttackBasedCheckDetector {
         +isInCheck(Board board, PieceColor color) boolean
     }
+    class LegalMoveChecker {
+        +hasAnyLegalMove(Board board, PieceColor color, MoveValidator validator) boolean
+    }
+    }
 
-    %% ================= PARTIDA =================
+    %% ================= PARTIDA (ajedrez.core.game) =================
+    namespace game {
     class Game {
         -Board board
         -MoveValidator validator
         -CheckDetector detector
+        -LegalMoveChecker legalMoveChecker
         -MoveHistory history
         -PieceColor turn
         +move(Position from, Position to) MoveResult
@@ -174,6 +188,8 @@ classDiagram
         <<enumeration>>
         IN_PROGRESS
         CHECK
+        CHECKMATE
+        STALEMATE
     }
     class Command {
         <<interface>>
@@ -193,6 +209,7 @@ classDiagram
         +push(Command c) void
         +undoLast() void
         +isEmpty() boolean
+    }
     }
 
     %% ================= RELACIONES =================
@@ -235,10 +252,13 @@ classDiagram
     CheckDetector <|.. AttackBasedCheckDetector
     AttackBasedCheckDetector ..> Board
     AttackBasedCheckDetector ..> Piece
+    LegalMoveChecker ..> Board
+    LegalMoveChecker ..> MoveValidator
 
     Game --> Board
     Game --> MoveValidator
     Game --> CheckDetector
+    Game --> LegalMoveChecker
     Game --> MoveHistory
     Game ..> MoveResult
     Game ..> GameStatus
@@ -251,3 +271,4 @@ classDiagram
     note for MovementStrategy "Composicion sobre herencia: las piezas no heredan de una clase base con logica de movimiento, componen una estrategia. Agregar una pieza nueva es agregar una estrategia, sin tocar nada existente."
     note for MoveValidator "Open/Closed: una regla nueva se agrega a la lista inyectada, sin modificar el validador ni las reglas existentes."
     note for Piece "reachableSquares (a donde puede ir) y attackedSquares (que casillas ataca) se separan por el peon: avanza recto pero captura en diagonal."
+    note for LegalMoveChecker "Detecta jaque mate y ahogado sin recursion: llama al MoveValidator desde afuera de la cadena KingSafetyRule -> CheckDetector, asi no hay ciclo."
